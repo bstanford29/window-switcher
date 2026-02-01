@@ -3,7 +3,6 @@ import SwiftUI
 @main
 struct WindowSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State private var showingSettings = false
 
     var body: some Scene {
         // Menu bar extra (status bar icon)

@@ -30,7 +30,7 @@ final class SwitcherPanel: NSPanel {
     // Handle key events directly
     override func keyDown(with event: NSEvent) {
         #if DEBUG
-        NSLog("[SwitcherPanel] keyDown: keyCode=\(event.keyCode)")
+        NSLog("[Panel] keyDown: keyCode=\(event.keyCode)")
         #endif
         // Let the HotkeyManager handle it via the event monitors
         super.keyDown(with: event)

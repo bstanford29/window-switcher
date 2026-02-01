@@ -11,9 +11,6 @@ final class WindowService {
     /// Minimum window size to be considered valid
     private let minimumSize: CGFloat = 50
 
-    /// Cache of AXUIElement apps for window title lookup
-    private var axAppCache: [pid_t: AXUIElement] = [:]
-
     /// Get all switchable windows, sorted by most recently focused
     func getWindows() -> [WindowInfo] {
         // Reset cache for fresh enumeration

@@ -1,32 +1,7 @@
 import SwiftUI
 
-/// Settings storage for user preferences
-final class SettingsManager: ObservableObject {
-    static let shared = SettingsManager()
-
-    @Published var useOptionTab: Bool {
-        didSet {
-            UserDefaults.standard.set(useOptionTab, forKey: "useOptionTab")
-        }
-    }
-
-    @Published var showWindowTitles: Bool {
-        didSet {
-            UserDefaults.standard.set(showWindowTitles, forKey: "showWindowTitles")
-        }
-    }
-
-    private init() {
-        // Load saved preferences or use defaults
-        self.useOptionTab = UserDefaults.standard.object(forKey: "useOptionTab") as? Bool ?? true
-        self.showWindowTitles = UserDefaults.standard.object(forKey: "showWindowTitles") as? Bool ?? true
-    }
-}
-
 /// Settings view for the menu bar dropdown
 struct SettingsView: View {
-    @StateObject private var settings = SettingsManager.shared
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
@@ -72,18 +47,6 @@ struct SettingsView: View {
                 ShortcutRow(keys: "← → ↑ ↓", action: "Navigate")
                 ShortcutRow(keys: "Esc", action: "Cancel")
                 ShortcutRow(keys: "Release ⌥", action: "Activate window")
-            }
-
-            Divider()
-
-            // Display options
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Display")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-
-                Toggle("Show window titles", isOn: $settings.showWindowTitles)
-                    .toggleStyle(.checkbox)
             }
         }
         .padding()

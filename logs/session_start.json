@@ -1,0 +1,10 @@
+[
+  {
+    "session_id": "c41f5afd-d533-4727-8b14-ac4fae03d43c",
+    "transcript_path": "/Users/brandonstanford/.claude/projects/-Users-brandonstanford-Projects-D/c41f5afd-d533-4727-8b14-ac4fae03d43c.jsonl",
+    "cwd": "/Users/brandonstanford/Projects D/window-switcher",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-opus-4-5-20251101"
+  }
+]

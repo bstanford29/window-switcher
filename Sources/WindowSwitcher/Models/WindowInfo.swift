@@ -10,13 +10,6 @@ struct WindowInfo: Identifiable, Equatable {
     let appIcon: NSImage
     let bounds: CGRect
 
-    var displayTitle: String {
-        if let title = windowTitle, !title.isEmpty {
-            return title
-        }
-        return ownerName
-    }
-
     static func == (lhs: WindowInfo, rhs: WindowInfo) -> Bool {
         lhs.id == rhs.id
     }

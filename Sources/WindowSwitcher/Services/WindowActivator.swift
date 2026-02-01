@@ -42,14 +42,6 @@ final class WindowActivator {
         return true
     }
 
-    /// Check if a window still exists (app is running and not terminated)
-    func windowExists(_ window: WindowInfo) -> Bool {
-        guard let app = NSRunningApplication(processIdentifier: window.ownerPID) else {
-            return false
-        }
-        return !app.isTerminated
-    }
-
     /// Raise a specific window using AXUIElement API
     private func raiseWindow(_ window: WindowInfo) {
         let appElement = AXUIElementCreateApplication(window.ownerPID)
