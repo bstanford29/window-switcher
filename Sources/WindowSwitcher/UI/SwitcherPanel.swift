@@ -147,11 +147,14 @@ final class SwitcherPanelController: ObservableObject {
         // Notify hotkey manager
         HotkeyManager.shared.switcherDidHide()
 
-        // Activate the selected window
+        // Activate the selected window (with error handling for closed windows)
         if let window = selectedWindow {
             // Small delay to ensure panel is hidden first
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                WindowActivator.shared.activate(window)
+                let success = WindowActivator.shared.activate(window)
+                if !success {
+                    NSLog("[Panel] Window no longer exists, skipping activation: \(window.ownerName)")
+                }
             }
         }
 
@@ -198,15 +201,32 @@ final class SwitcherPanelController: ObservableObject {
         NSLog("[Panel] Attempting to close: \(window.ownerName) (PID: \(pid))")
 
         // Find the running application and terminate it
-        if let app = NSRunningApplication(processIdentifier: pid) {
-            NSLog("[Panel] Found app, calling terminate()")
-            let success = app.terminate()
-            NSLog("[Panel] terminate() returned: \(success)")
+        guard let app = NSRunningApplication(processIdentifier: pid) else {
+            NSLog("[Panel] App not found (already closed?), refreshing list")
+            refreshWindowList()
+            return
+        }
 
-            // Refresh the window list after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                self?.refreshWindowList()
-            }
+        // Check if already terminated
+        if app.isTerminated {
+            NSLog("[Panel] App already terminated, refreshing list")
+            refreshWindowList()
+            return
+        }
+
+        NSLog("[Panel] Found app, calling terminate()")
+        let success = app.terminate()
+        NSLog("[Panel] terminate() returned: \(success)")
+
+        if !success {
+            // Try forceTerminate for stubborn apps
+            NSLog("[Panel] terminate() failed, trying forceTerminate()")
+            app.forceTerminate()
+        }
+
+        // Refresh the window list after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.refreshWindowList()
         }
     }
 

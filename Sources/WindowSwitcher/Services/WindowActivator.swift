@@ -8,14 +8,38 @@ final class WindowActivator {
     private init() {}
 
     /// Activate a window, bringing it to front and focusing its app
-    func activate(_ window: WindowInfo) {
-        // First, activate the owning application
-        if let app = NSRunningApplication(processIdentifier: window.ownerPID) {
-            app.activate(options: [.activateIgnoringOtherApps])
+    /// Returns true if activation succeeded, false if the window/app no longer exists
+    @discardableResult
+    func activate(_ window: WindowInfo) -> Bool {
+        // First, check if the app is still running
+        guard let app = NSRunningApplication(processIdentifier: window.ownerPID) else {
+            NSLog("[WindowActivator] App no longer running: \(window.ownerName) (PID: \(window.ownerPID))")
+            return false
+        }
+
+        // Check if app is terminated
+        if app.isTerminated {
+            NSLog("[WindowActivator] App is terminated: \(window.ownerName)")
+            return false
+        }
+
+        // Activate the owning application
+        let activated = app.activate(options: [.activateIgnoringOtherApps])
+        if !activated {
+            NSLog("[WindowActivator] Failed to activate app: \(window.ownerName)")
         }
 
         // Then raise the specific window using Accessibility API
         raiseWindow(window)
+        return true
+    }
+
+    /// Check if a window still exists (app is running and not terminated)
+    func windowExists(_ window: WindowInfo) -> Bool {
+        guard let app = NSRunningApplication(processIdentifier: window.ownerPID) else {
+            return false
+        }
+        return !app.isTerminated
     }
 
     /// Raise a specific window using AXUIElement API

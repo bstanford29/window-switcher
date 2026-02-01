@@ -20,10 +20,13 @@ final class WindowService {
         titlesCache = [:]
         titleIndexByApp = [:]
 
+        // Note: .optionOnScreenOnly excludes minimized windows (same as Windows Alt+Tab)
+        // To include minimized windows, would need .optionAll but that includes off-screen
         guard let windowList = CGWindowListCopyWindowInfo(
             [.optionOnScreenOnly, .excludeDesktopElements],
             kCGNullWindowID
         ) as? [[String: Any]] else {
+            NSLog("[WindowService] Failed to get window list from CGWindowListCopyWindowInfo")
             return []
         }
 
@@ -57,7 +60,6 @@ final class WindowService {
     private func getWindowTitlesForApp(pid: pid_t) -> [String] {
         // Return cached if available
         if let cached = titlesCache[pid] {
-            NSLog("[WindowService] Using cached titles for PID \(pid): \(cached)")
             return cached
         }
 
@@ -66,11 +68,10 @@ final class WindowService {
         let result = AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef)
 
         guard result == .success, let windows = windowsRef as? [AXUIElement] else {
-            NSLog("[WindowService] AX failed for PID \(pid): \(result.rawValue)")
+            // AX API can fail for various reasons (permission, app not responding, etc.)
             titlesCache[pid] = []
             return []
         }
-        NSLog("[WindowService] AX found \(windows.count) windows for PID \(pid)")
 
         var titles: [String] = []
         for window in windows {
@@ -81,7 +82,6 @@ final class WindowService {
             }
         }
 
-        NSLog("[WindowService] Collected titles for PID \(pid): \(titles)")
         titlesCache[pid] = titles
         return titles
     }
@@ -146,8 +146,6 @@ final class WindowService {
         if windowTitle == nil || windowTitle?.isEmpty == true {
             windowTitle = dict[kCGWindowName as String] as? String
         }
-
-        NSLog("[WindowService] \(ownerName): '\(windowTitle ?? "(nil)")'")
 
         // Get app icon
         let appIcon: NSImage

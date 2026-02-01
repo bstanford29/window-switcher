@@ -160,6 +160,23 @@ optionQHotKey?.keyDownHandler = { [weak self] in
 1. **Current Space only** - Only shows windows on current desktop
 2. **No thumbnails** - Would require Screen Recording permission
 3. **Some apps hide windows** - Electron apps may not expose all windows
+4. **Minimized windows excluded** - Same behavior as Windows Alt+Tab (by design)
+
+## Edge Case Handling (Phase 4)
+
+### Window Close During Switcher Open
+If an app is closed (via Option+Q or externally) while the switcher is visible:
+- `WindowActivator.activate()` verifies the app still exists before activating
+- `closeSelectedApp()` checks if app is terminated before trying to close
+- Window list is automatically refreshed after close operations
+
+### Fullscreen Support
+Panel uses `.fullScreenAuxiliary` collection behavior to appear over fullscreen apps.
+
+### Error Handling
+- `NSRunningApplication` validity is checked before operations
+- `forceTerminate()` is tried if `terminate()` fails
+- Graceful fallbacks when AX API calls fail
 
 ## Build & Run
 
