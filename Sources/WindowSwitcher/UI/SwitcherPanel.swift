@@ -280,12 +280,11 @@ final class SwitcherPanelController: ObservableObject {
         if selectedIndex >= windows.count {
             selectedIndex = max(0, windows.count - 1)
         }
-
         updateView()
     }
 
+    /// Update the SwiftUI view
     private func updateView() {
-        // Update the SwiftUI view
         let view = SwitcherView(
             windows: windows,
             selectedIndex: Binding(

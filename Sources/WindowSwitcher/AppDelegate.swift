@@ -9,6 +9,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSLog("[WindowSwitcher] App launched")
         #endif
 
+        // Set up status bar icon
+        StatusBarManager.shared.setup()
+
         // Check and request Accessibility permission
         let hasPermission = checkAccessibilityPermission()
         #if DEBUG
@@ -29,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         HotkeyManager.shared.stop()
+        StatusBarManager.shared.teardown()
     }
 
     private func checkAccessibilityPermission() -> Bool {

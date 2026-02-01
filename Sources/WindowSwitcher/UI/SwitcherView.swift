@@ -94,34 +94,35 @@ struct VisualEffectView: NSViewRepresentable {
 }
 
 #Preview {
-    let sampleWindows = [
-        WindowInfo(
-            id: 1,
-            ownerPID: 1,
-            ownerName: "Safari",
-            windowTitle: "Apple",
-            appIcon: NSWorkspace.shared.icon(forFile: "/Applications/Safari.app"),
-            bounds: .zero
-        ),
-        WindowInfo(
-            id: 2,
-            ownerPID: 2,
-            ownerName: "Finder",
-            windowTitle: "Documents",
-            appIcon: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"),
-            bounds: .zero
-        ),
-        WindowInfo(
-            id: 3,
-            ownerPID: 3,
-            ownerName: "Terminal",
-            windowTitle: "bash",
-            appIcon: NSWorkspace.shared.icon(forFile: "/System/Applications/Utilities/Terminal.app"),
-            bounds: .zero
-        )
-    ]
-
-    return SwitcherView(windows: sampleWindows, selectedIndex: .constant(1))
-        .padding(50)
-        .background(Color.gray)
+    SwitcherView(
+        windows: [
+            WindowInfo(
+                id: 1,
+                ownerPID: 1,
+                ownerName: "Safari",
+                windowTitle: "Apple",
+                appIcon: NSWorkspace.shared.icon(forFile: "/Applications/Safari.app"),
+                bounds: .zero
+            ),
+            WindowInfo(
+                id: 2,
+                ownerPID: 2,
+                ownerName: "Finder",
+                windowTitle: "Documents",
+                appIcon: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"),
+                bounds: .zero
+            ),
+            WindowInfo(
+                id: 3,
+                ownerPID: 3,
+                ownerName: "Terminal",
+                windowTitle: "bash",
+                appIcon: NSWorkspace.shared.icon(forFile: "/System/Applications/Utilities/Terminal.app"),
+                bounds: .zero
+            )
+        ],
+        selectedIndex: .constant(1)
+    )
+    .padding(50)
+    .background(Color.gray)
 }
