@@ -57,6 +57,7 @@ final class WindowService {
     private func getWindowTitlesForApp(pid: pid_t) -> [String] {
         // Return cached if available
         if let cached = titlesCache[pid] {
+            NSLog("[WindowService] Using cached titles for PID \(pid): \(cached)")
             return cached
         }
 
@@ -65,19 +66,22 @@ final class WindowService {
         let result = AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef)
 
         guard result == .success, let windows = windowsRef as? [AXUIElement] else {
+            NSLog("[WindowService] AX failed for PID \(pid): \(result.rawValue)")
             titlesCache[pid] = []
             return []
         }
+        NSLog("[WindowService] AX found \(windows.count) windows for PID \(pid)")
 
         var titles: [String] = []
         for window in windows {
             var titleRef: CFTypeRef?
-            AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
-            if let title = titleRef as? String, !title.isEmpty {
+            let titleResult = AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
+            if titleResult == .success, let title = titleRef as? String, !title.isEmpty {
                 titles.append(title)
             }
         }
 
+        NSLog("[WindowService] Collected titles for PID \(pid): \(titles)")
         titlesCache[pid] = titles
         return titles
     }

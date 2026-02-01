@@ -139,6 +139,22 @@ if isSwitcherVisible {
 
 **Affected components:** `HotkeyManager.swift`
 
+### Option+Q Not Closing Apps (Fixed)
+**Root cause:** Event monitors (local/global) weren't receiving Q key events reliably. The panel is non-activating, so key events were going to the previously active app instead.
+
+**Solution:** Register Option+Q as a dedicated global hotkey using the HotKey library (same as Option+Tab):
+```swift
+optionQHotKey = HotKey(key: .q, modifiers: [.option])
+optionQHotKey?.keyDownHandler = { [weak self] in
+    guard let self = self, self.isSwitcherVisible else { return }
+    self.onCloseApp?()
+}
+```
+
+**Lesson:** For reliable global shortcuts, use the HotKey library rather than event monitors. Event monitors have complex behavior depending on app activation state.
+
+**Affected components:** `HotkeyManager.swift`
+
 ## Known Issues / Limitations
 
 1. **Current Space only** - Only shows windows on current desktop

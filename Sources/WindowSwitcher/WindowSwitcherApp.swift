@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct WindowSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @State private var showingSettings = false
 
     var body: some Scene {
         // Menu bar extra (status bar icon)
@@ -13,6 +14,11 @@ struct WindowSwitcherApp: App {
                 }
                 .keyboardShortcut("i", modifiers: .command)
 
+                Button("Settings...") {
+                    showSettings()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+
                 Divider()
 
                 Button("Quit") {
@@ -21,6 +27,21 @@ struct WindowSwitcherApp: App {
                 .keyboardShortcut("q", modifiers: .command)
             }
         }
+
+        // Settings window
+        Window("WindowSwitcher Settings", id: "settings") {
+            SettingsView()
+        }
+        .windowResizability(.contentSize)
+    }
+
+    private func showSettings() {
+        // Open the settings window
+        if let url = URL(string: "windowswitcher://settings") {
+            NSWorkspace.shared.open(url)
+        }
+        // Alternative: Use environment to open window
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     private func showAbout() {

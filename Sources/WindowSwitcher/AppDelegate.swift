@@ -62,6 +62,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.cycleBackward()
         }
 
+        hotkeyManager.onCloseApp = { [weak self] in
+            self?.panelController.closeSelectedApp()
+        }
+
         NSLog("[WindowSwitcher] Hotkey handlers configured")
     }
 }

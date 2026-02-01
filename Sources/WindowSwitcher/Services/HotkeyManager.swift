@@ -18,7 +18,11 @@ final class HotkeyManager: ObservableObject {
     /// Callback when Shift+Tab is pressed while switcher is visible
     var onCycleBackward: (() -> Void)?
 
+    /// Callback when Q is pressed while switcher is visible (close app)
+    var onCloseApp: (() -> Void)?
+
     private var optionTabHotKey: HotKey?
+    private var optionQHotKey: HotKey?
     private var flagsMonitor: Any?
     private var keyMonitor: Any?
     private var globalKeyMonitor: Any?
@@ -46,6 +50,15 @@ final class HotkeyManager: ObservableObject {
         }
 
         NSLog("[HotkeyManager] Hotkey registered: Option+Tab")
+
+        // Register Option+Q hotkey for closing apps
+        optionQHotKey = HotKey(key: .q, modifiers: [.option])
+        optionQHotKey?.keyDownHandler = { [weak self] in
+            guard let self = self, self.isSwitcherVisible else { return }
+            NSLog("[HotkeyManager] >>> Option+Q PRESSED! <<<")
+            self.onCloseApp?()
+        }
+        NSLog("[HotkeyManager] Hotkey registered: Option+Q")
 
         // Monitor for Option key release
         flagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
@@ -87,6 +100,12 @@ final class HotkeyManager: ObservableObject {
             if event.keyCode == UInt16(kVK_Escape) {
                 self.onHideSwitcher?()
             }
+
+            // Q to close selected app
+            if event.keyCode == UInt16(kVK_ANSI_Q) {
+                NSLog("[HotkeyManager] Q pressed (global monitor) - calling onCloseApp")
+                self.onCloseApp?()
+            }
         }
         NSLog("[HotkeyManager] Global key monitor installed")
     }
@@ -94,6 +113,7 @@ final class HotkeyManager: ObservableObject {
     /// Stop listening for hotkeys
     func stop() {
         optionTabHotKey = nil
+        optionQHotKey = nil
 
         if let monitor = flagsMonitor {
             NSEvent.removeMonitor(monitor)
@@ -134,6 +154,7 @@ final class HotkeyManager: ObservableObject {
     }
 
     private func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+        NSLog("[HotkeyManager] handleKeyDown: keyCode=\(event.keyCode), isSwitcherVisible=\(isSwitcherVisible)")
         guard isSwitcherVisible else { return event }
 
         // Check for Tab key
@@ -149,6 +170,13 @@ final class HotkeyManager: ObservableObject {
         // Check for Escape to cancel
         if event.keyCode == UInt16(kVK_Escape) {
             onHideSwitcher?()
+            return nil
+        }
+
+        // Check for Q to close selected app
+        if event.keyCode == UInt16(kVK_ANSI_Q) {
+            NSLog("[HotkeyManager] Q pressed (local monitor) - calling onCloseApp")
+            onCloseApp?()
             return nil
         }
 

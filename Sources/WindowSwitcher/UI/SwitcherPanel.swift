@@ -26,6 +26,13 @@ final class SwitcherPanel: NSPanel {
 
     // Allow panel to receive key events
     override var canBecomeKey: Bool { true }
+
+    // Handle key events directly
+    override func keyDown(with event: NSEvent) {
+        NSLog("[SwitcherPanel] keyDown: keyCode=\(event.keyCode)")
+        // Let the HotkeyManager handle it via the event monitors
+        super.keyDown(with: event)
+    }
 }
 
 /// Controller for the switcher panel
@@ -114,7 +121,14 @@ final class SwitcherPanelController: ObservableObject {
         // Show the panel
         panel.orderFrontRegardless()
         panel.makeKey()
-        NSLog("[Panel] Panel shown, isVisible: \(panel.isVisible)")
+
+        // Activate our app AFTER showing panel to receive key events (required for Q to close)
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Make panel first responder
+        panel.makeFirstResponder(panel.contentView)
+
+        NSLog("[Panel] Panel shown, isVisible: \(panel.isVisible), isKeyWindow: \(panel.isKeyWindow)")
 
         // Notify hotkey manager
         HotkeyManager.shared.switcherDidShow()
@@ -168,6 +182,49 @@ final class SwitcherPanelController: ObservableObject {
     func cycleBackward() {
         guard !windows.isEmpty else { return }
         selectedIndex = (selectedIndex - 1 + windows.count) % windows.count
+        updateView()
+    }
+
+    /// Close the selected app and refresh the window list
+    func closeSelectedApp() {
+        NSLog("[Panel] closeSelectedApp() called - selectedIndex: \(selectedIndex), windows.count: \(windows.count)")
+        guard selectedIndex < windows.count else {
+            NSLog("[Panel] ERROR: selectedIndex out of bounds")
+            return
+        }
+
+        let window = windows[selectedIndex]
+        let pid = window.ownerPID
+        NSLog("[Panel] Attempting to close: \(window.ownerName) (PID: \(pid))")
+
+        // Find the running application and terminate it
+        if let app = NSRunningApplication(processIdentifier: pid) {
+            NSLog("[Panel] Found app, calling terminate()")
+            let success = app.terminate()
+            NSLog("[Panel] terminate() returned: \(success)")
+
+            // Refresh the window list after a short delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.refreshWindowList()
+            }
+        }
+    }
+
+    /// Refresh the window list and update view
+    private func refreshWindowList() {
+        windows = WindowService.shared.getWindows()
+
+        if windows.isEmpty {
+            // No more windows, hide the switcher
+            hide()
+            return
+        }
+
+        // Adjust selected index if needed
+        if selectedIndex >= windows.count {
+            selectedIndex = max(0, windows.count - 1)
+        }
+
         updateView()
     }
 
