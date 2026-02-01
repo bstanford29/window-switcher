@@ -1,25 +1,30 @@
 import AppKit
-import os.log
-
-private let logger = Logger(subsystem: "com.brandonstanford.windowswitcher", category: "App")
 
 /// Application delegate handling lifecycle and permissions
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let panelController = SwitcherPanelController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
         NSLog("[WindowSwitcher] App launched")
+        #endif
 
         // Check and request Accessibility permission
         let hasPermission = checkAccessibilityPermission()
+        #if DEBUG
         NSLog("[WindowSwitcher] Accessibility permission: \(hasPermission)")
+        #else
+        _ = hasPermission // Silence unused variable warning in release
+        #endif
 
         // Set up hotkey handlers
         setupHotkeyHandlers()
 
         // Start listening for hotkeys
         HotkeyManager.shared.start()
+        #if DEBUG
         NSLog("[WindowSwitcher] Hotkey manager started")
+        #endif
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -30,7 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let permissionManager = PermissionManager.shared
 
         if !permissionManager.hasAccessibilityPermission {
+            #if DEBUG
             NSLog("[WindowSwitcher] Requesting accessibility permission...")
+            #endif
             permissionManager.requestAccessibilityPermission()
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -45,12 +52,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hotkeyManager = HotkeyManager.shared
 
         hotkeyManager.onShowSwitcher = { [weak self] in
+            #if DEBUG
             NSLog("[WindowSwitcher] onShowSwitcher called")
+            #endif
             self?.panelController.show()
         }
 
         hotkeyManager.onHideSwitcher = { [weak self] in
+            #if DEBUG
             NSLog("[WindowSwitcher] onHideSwitcher called")
+            #endif
             self?.panelController.hideAndActivate()
         }
 
@@ -66,6 +77,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.closeSelectedApp()
         }
 
+        #if DEBUG
         NSLog("[WindowSwitcher] Hotkey handlers configured")
+        #endif
     }
 }

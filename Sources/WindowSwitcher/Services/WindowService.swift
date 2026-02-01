@@ -26,7 +26,9 @@ final class WindowService {
             [.optionOnScreenOnly, .excludeDesktopElements],
             kCGNullWindowID
         ) as? [[String: Any]] else {
+            #if DEBUG
             NSLog("[WindowService] Failed to get window list from CGWindowListCopyWindowInfo")
+            #endif
             return []
         }
 

@@ -32,44 +32,60 @@ final class HotkeyManager: ObservableObject {
 
     /// Start listening for the Option+Tab hotkey
     func start() {
+        #if DEBUG
         NSLog("[HotkeyManager] Starting hotkey registration...")
+        #endif
 
         // Register Option+Tab hotkey
         optionTabHotKey = HotKey(key: .tab, modifiers: [.option])
 
+        #if DEBUG
         NSLog("[HotkeyManager] HotKey object created: \(String(describing: optionTabHotKey))")
         NSLog("[HotkeyManager] KeyCombo: \(String(describing: optionTabHotKey?.keyCombo))")
+        #endif
 
         optionTabHotKey?.keyDownHandler = { [weak self] in
+            #if DEBUG
             NSLog("[HotkeyManager] >>> Option+Tab PRESSED! <<<")
+            #endif
             self?.handleHotkeyPressed()
         }
 
         optionTabHotKey?.keyUpHandler = {
+            #if DEBUG
             NSLog("[HotkeyManager] Option+Tab released")
+            #endif
         }
 
+        #if DEBUG
         NSLog("[HotkeyManager] Hotkey registered: Option+Tab")
+        #endif
 
         // Register Option+Q hotkey for closing apps
         optionQHotKey = HotKey(key: .q, modifiers: [.option])
         optionQHotKey?.keyDownHandler = { [weak self] in
             guard let self = self, self.isSwitcherVisible else { return }
+            #if DEBUG
             NSLog("[HotkeyManager] >>> Option+Q PRESSED! <<<")
+            #endif
             self.onCloseApp?()
         }
+        #if DEBUG
         NSLog("[HotkeyManager] Hotkey registered: Option+Q")
+        #endif
 
         // Monitor for Option key release
         flagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             self?.handleFlagsChanged(event)
         }
 
+        #if DEBUG
         if flagsMonitor != nil {
             NSLog("[HotkeyManager] Global flags monitor installed")
         } else {
             NSLog("[HotkeyManager] WARNING: Failed to install global flags monitor")
         }
+        #endif
 
         // Also monitor local events (when our window is focused)
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown]) { [weak self] event in
@@ -81,7 +97,9 @@ final class HotkeyManager: ObservableObject {
             return event
         }
 
+        #if DEBUG
         NSLog("[HotkeyManager] Event monitors installed")
+        #endif
 
         // Global key monitor to detect Tab presses while switcher is visible
         globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
@@ -106,7 +124,9 @@ final class HotkeyManager: ObservableObject {
                 self.onCloseApp?()
             }
         }
+        #if DEBUG
         NSLog("[HotkeyManager] Global key monitor installed")
+        #endif
     }
 
     /// Stop listening for hotkeys
@@ -122,6 +142,11 @@ final class HotkeyManager: ObservableObject {
         if let monitor = keyMonitor {
             NSEvent.removeMonitor(monitor)
             keyMonitor = nil
+        }
+
+        if let monitor = globalKeyMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalKeyMonitor = nil
         }
     }
 

@@ -36,11 +36,7 @@ struct WindowSwitcherApp: App {
     }
 
     private func showSettings() {
-        // Open the settings window
-        if let url = URL(string: "windowswitcher://settings") {
-            NSWorkspace.shared.open(url)
-        }
-        // Alternative: Use environment to open window
+        // Use sendAction to open the settings window
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 

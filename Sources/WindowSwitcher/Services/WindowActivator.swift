@@ -13,21 +13,29 @@ final class WindowActivator {
     func activate(_ window: WindowInfo) -> Bool {
         // First, check if the app is still running
         guard let app = NSRunningApplication(processIdentifier: window.ownerPID) else {
+            #if DEBUG
             NSLog("[WindowActivator] App no longer running: \(window.ownerName) (PID: \(window.ownerPID))")
+            #endif
             return false
         }
 
         // Check if app is terminated
         if app.isTerminated {
+            #if DEBUG
             NSLog("[WindowActivator] App is terminated: \(window.ownerName)")
+            #endif
             return false
         }
 
         // Activate the owning application
         let activated = app.activate(options: [.activateIgnoringOtherApps])
+        #if DEBUG
         if !activated {
             NSLog("[WindowActivator] Failed to activate app: \(window.ownerName)")
         }
+        #else
+        _ = activated // Silence unused variable warning in release
+        #endif
 
         // Then raise the specific window using Accessibility API
         raiseWindow(window)

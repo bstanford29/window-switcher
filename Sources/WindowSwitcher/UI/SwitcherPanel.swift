@@ -29,7 +29,9 @@ final class SwitcherPanel: NSPanel {
 
     // Handle key events directly
     override func keyDown(with event: NSEvent) {
+        #if DEBUG
         NSLog("[SwitcherPanel] keyDown: keyCode=\(event.keyCode)")
+        #endif
         // Let the HotkeyManager handle it via the event monitors
         super.keyDown(with: event)
     }
@@ -49,21 +51,29 @@ final class SwitcherPanelController: ObservableObject {
 
     /// Show the switcher panel with the current windows
     func show() {
+        #if DEBUG
         NSLog("[Panel] show() called")
+        #endif
 
         // Refresh window list
         windows = WindowService.shared.getWindows()
+        #if DEBUG
         NSLog("[Panel] Found \(windows.count) windows")
+        #endif
 
         guard !windows.isEmpty else {
+            #if DEBUG
             NSLog("[Panel] No windows found, returning")
+            #endif
             return
         }
 
-        // Log window names with titles
+        #if DEBUG
+        // Log window names (only in debug, window titles may contain sensitive info)
         for (i, w) in windows.prefix(8).enumerated() {
-            NSLog("[Panel] Window \(i): \(w.ownerName) -> '\(w.windowTitle ?? "(nil)")'")
+            NSLog("[Panel] Window \(i): \(w.ownerName)")
         }
+        #endif
 
         // Reset selection to the second window (most recently used after current)
         // If there's only one window, select it
@@ -72,11 +82,15 @@ final class SwitcherPanelController: ObservableObject {
         // Create panel if needed
         if panel == nil {
             panel = SwitcherPanel()
+            #if DEBUG
             NSLog("[Panel] Created new panel")
+            #endif
         }
 
         guard let panel = panel else {
+            #if DEBUG
             NSLog("[Panel] ERROR: panel is nil")
+            #endif
             return
         }
 
@@ -93,7 +107,9 @@ final class SwitcherPanelController: ObservableObject {
         if hostingView == nil {
             hostingView = NSHostingView(rootView: view)
             panel.contentView = hostingView
+            #if DEBUG
             NSLog("[Panel] Created hosting view")
+            #endif
         } else {
             hostingView?.rootView = view
         }
@@ -104,7 +120,9 @@ final class SwitcherPanelController: ObservableObject {
         // Ensure minimum size
         size.width = max(size.width, 300)
         size.height = max(size.height, 150)
+        #if DEBUG
         NSLog("[Panel] Calculated size: \(size)")
+        #endif
 
         // Center on the main screen
         if let screen = NSScreen.main {
@@ -113,9 +131,13 @@ final class SwitcherPanelController: ObservableObject {
             let y = screenFrame.midY - size.height / 2
             let frame = NSRect(x: x, y: y, width: size.width, height: size.height)
             panel.setFrame(frame, display: true)
+            #if DEBUG
             NSLog("[Panel] Set frame: \(frame)")
+            #endif
         } else {
+            #if DEBUG
             NSLog("[Panel] ERROR: No main screen")
+            #endif
         }
 
         // Show the panel
@@ -128,7 +150,9 @@ final class SwitcherPanelController: ObservableObject {
         // Make panel first responder
         panel.makeFirstResponder(panel.contentView)
 
+        #if DEBUG
         NSLog("[Panel] Panel shown, isVisible: \(panel.isVisible), isKeyWindow: \(panel.isKeyWindow)")
+        #endif
 
         // Notify hotkey manager
         HotkeyManager.shared.switcherDidShow()
@@ -152,9 +176,13 @@ final class SwitcherPanelController: ObservableObject {
             // Small delay to ensure panel is hidden first
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 let success = WindowActivator.shared.activate(window)
+                #if DEBUG
                 if !success {
                     NSLog("[Panel] Window no longer exists, skipping activation: \(window.ownerName)")
                 }
+                #else
+                _ = success // Silence unused variable warning in release
+                #endif
             }
         }
 
@@ -189,40 +217,48 @@ final class SwitcherPanelController: ObservableObject {
     }
 
     /// Close the selected app and refresh the window list
+    /// Note: Uses terminate() only to allow apps to show "save changes" dialogs
     func closeSelectedApp() {
+        #if DEBUG
         NSLog("[Panel] closeSelectedApp() called - selectedIndex: \(selectedIndex), windows.count: \(windows.count)")
+        #endif
         guard selectedIndex < windows.count else {
+            #if DEBUG
             NSLog("[Panel] ERROR: selectedIndex out of bounds")
+            #endif
             return
         }
 
         let window = windows[selectedIndex]
         let pid = window.ownerPID
+        #if DEBUG
         NSLog("[Panel] Attempting to close: \(window.ownerName) (PID: \(pid))")
+        #endif
 
         // Find the running application and terminate it
         guard let app = NSRunningApplication(processIdentifier: pid) else {
+            #if DEBUG
             NSLog("[Panel] App not found (already closed?), refreshing list")
+            #endif
             refreshWindowList()
             return
         }
 
         // Check if already terminated
         if app.isTerminated {
+            #if DEBUG
             NSLog("[Panel] App already terminated, refreshing list")
+            #endif
             refreshWindowList()
             return
         }
 
+        #if DEBUG
         NSLog("[Panel] Found app, calling terminate()")
-        let success = app.terminate()
-        NSLog("[Panel] terminate() returned: \(success)")
-
-        if !success {
-            // Try forceTerminate for stubborn apps
-            NSLog("[Panel] terminate() failed, trying forceTerminate()")
-            app.forceTerminate()
-        }
+        #endif
+        // Use terminate() only - allows apps to show "save changes" dialogs
+        // Do not use forceTerminate() to prevent potential data loss
+        _ = app.terminate()
 
         // Refresh the window list after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
