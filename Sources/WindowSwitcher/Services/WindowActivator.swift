@@ -81,9 +81,12 @@ final class WindowActivator {
 
         // Fall back to matching by position
         var positionRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &positionRef) == .success {
+        if AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &positionRef) == .success,
+           let positionValue = positionRef,
+           CFGetTypeID(positionValue) == AXValueGetTypeID() {
             var position = CGPoint.zero
-            if AXValueGetValue(positionRef as! AXValue, .cgPoint, &position) {
+            let axValue = positionValue as! AXValue  // Safe: verified by CFGetTypeID check above
+            if AXValueGetValue(axValue, .cgPoint, &position) {
                 // Allow some tolerance in position matching
                 let tolerance: CGFloat = 5
                 if abs(position.x - target.bounds.origin.x) < tolerance &&
@@ -95,9 +98,12 @@ final class WindowActivator {
 
         // If we can't match precisely, try to match by size as additional heuristic
         var sizeRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success {
+        if AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success,
+           let sizeValue = sizeRef,
+           CFGetTypeID(sizeValue) == AXValueGetTypeID() {
             var size = CGSize.zero
-            if AXValueGetValue(sizeRef as! AXValue, .cgSize, &size) {
+            let axValue = sizeValue as! AXValue  // Safe: verified by CFGetTypeID check above
+            if AXValueGetValue(axValue, .cgSize, &size) {
                 let tolerance: CGFloat = 5
                 if abs(size.width - target.bounds.width) < tolerance &&
                    abs(size.height - target.bounds.height) < tolerance {
