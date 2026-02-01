@@ -18,7 +18,7 @@ final class HotkeyManager: ObservableObject {
     /// Callback when Shift+Tab is pressed while switcher is visible
     var onCycleBackward: (() -> Void)?
 
-    private var hotKey: HotKey?
+    private var optionTabHotKey: HotKey?
     private var flagsMonitor: Any?
     private var keyMonitor: Any?
     private var globalKeyMonitor: Any?
@@ -31,17 +31,17 @@ final class HotkeyManager: ObservableObject {
         NSLog("[HotkeyManager] Starting hotkey registration...")
 
         // Register Option+Tab hotkey
-        hotKey = HotKey(key: .tab, modifiers: [.option])
+        optionTabHotKey = HotKey(key: .tab, modifiers: [.option])
 
-        NSLog("[HotkeyManager] HotKey object created: \(String(describing: hotKey))")
-        NSLog("[HotkeyManager] KeyCombo: \(String(describing: hotKey?.keyCombo))")
+        NSLog("[HotkeyManager] HotKey object created: \(String(describing: optionTabHotKey))")
+        NSLog("[HotkeyManager] KeyCombo: \(String(describing: optionTabHotKey?.keyCombo))")
 
-        hotKey?.keyDownHandler = { [weak self] in
+        optionTabHotKey?.keyDownHandler = { [weak self] in
             NSLog("[HotkeyManager] >>> Option+Tab PRESSED! <<<")
             self?.handleHotkeyPressed()
         }
 
-        hotKey?.keyUpHandler = {
+        optionTabHotKey?.keyUpHandler = {
             NSLog("[HotkeyManager] Option+Tab released")
         }
 
@@ -70,23 +70,30 @@ final class HotkeyManager: ObservableObject {
 
         NSLog("[HotkeyManager] Event monitors installed")
 
-        // DEBUG: Monitor ALL global key events to see if Option+Tab reaches us
-        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { event in
-            let keyCode = event.keyCode
-            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            NSLog("[HotkeyManager] Global keyDown: keyCode=\(keyCode), modifiers=\(modifiers)")
+        // Global key monitor to detect Tab presses while switcher is visible
+        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self = self, self.isSwitcherVisible else { return }
 
-            // Tab key = 48, Option = .option
-            if keyCode == 48 && modifiers.contains(.option) {
-                NSLog("[HotkeyManager] !!! Option+Tab detected via global monitor !!!")
+            // Tab key while Option is held = cycle
+            if event.keyCode == UInt16(kVK_Tab) && event.modifierFlags.contains(.option) {
+                if event.modifierFlags.contains(.shift) {
+                    self.onCycleBackward?()
+                } else {
+                    self.onCycleForward?()
+                }
+            }
+
+            // Escape to cancel
+            if event.keyCode == UInt16(kVK_Escape) {
+                self.onHideSwitcher?()
             }
         }
-        NSLog("[HotkeyManager] Global key monitor installed for debugging")
+        NSLog("[HotkeyManager] Global key monitor installed")
     }
 
     /// Stop listening for hotkeys
     func stop() {
-        hotKey = nil
+        optionTabHotKey = nil
 
         if let monitor = flagsMonitor {
             NSEvent.removeMonitor(monitor)
@@ -110,7 +117,13 @@ final class HotkeyManager: ObservableObject {
     }
 
     private func handleHotkeyPressed() {
-        onShowSwitcher?()
+        if isSwitcherVisible {
+            // Already visible - cycle to next window
+            onCycleForward?()
+        } else {
+            // Not visible - show switcher
+            onShowSwitcher?()
+        }
     }
 
     private func handleFlagsChanged(_ event: NSEvent) {

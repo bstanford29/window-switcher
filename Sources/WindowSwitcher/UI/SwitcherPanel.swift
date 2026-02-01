@@ -53,9 +53,9 @@ final class SwitcherPanelController: ObservableObject {
             return
         }
 
-        // Log window names
-        for (i, w) in windows.prefix(5).enumerated() {
-            NSLog("[Panel] Window \(i): \(w.ownerName) - \(w.windowTitle ?? "untitled")")
+        // Log window names with titles
+        for (i, w) in windows.prefix(8).enumerated() {
+            NSLog("[Panel] Window \(i): \(w.ownerName) -> '\(w.windowTitle ?? "(nil)")'")
         }
 
         // Reset selection to the second window (most recently used after current)

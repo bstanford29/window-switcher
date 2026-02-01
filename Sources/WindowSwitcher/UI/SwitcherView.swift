@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Main SwiftUI view for the window switcher (Grid layout - Option B)
+/// Main SwiftUI view for the window switcher
+/// Design: Dark glass morphism with refined edges
 struct SwitcherView: View {
     let windows: [WindowInfo]
     @Binding var selectedIndex: Int
@@ -11,11 +12,11 @@ struct SwitcherView: View {
     }
 
     private var gridColumns: [GridItem] {
-        Array(repeating: GridItem(.fixed(180), spacing: 8), count: columns)
+        Array(repeating: GridItem(.fixed(220), spacing: 12), count: columns)
     }
 
     var body: some View {
-        LazyVGrid(columns: gridColumns, spacing: 8) {
+        LazyVGrid(columns: gridColumns, spacing: 12) {
             ForEach(Array(windows.enumerated()), id: \.element.id) { index, window in
                 WindowCell(
                     window: window,
@@ -26,23 +27,49 @@ struct SwitcherView: View {
                 }
             }
         }
-        .padding(20)
-        .frame(minWidth: 200, minHeight: 120)
+        .padding(24)
+        .frame(minWidth: 240, minHeight: 140)
         .background(
             ZStack {
-                // Solid dark background for visibility
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.black.opacity(0.85))
-                // Blur effect on top
+                // Deep dark base
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(white: 0.08).opacity(0.95))
+
+                // Frosted glass effect
                 VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+
+                // Subtle gradient overlay for depth
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.06),
+                                Color.clear,
+                                Color.black.opacity(0.1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
             }
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.3), lineWidth: 2)
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.2),
+                            Color.white.opacity(0.05)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 1
+                )
         )
-        .shadow(color: .black.opacity(0.6), radius: 30, x: 0, y: 15)
+        .shadow(color: .black.opacity(0.5), radius: 40, x: 0, y: 20)
+        .shadow(color: Color(red: 0.3, green: 0.5, blue: 0.9).opacity(0.1), radius: 60, x: 0, y: 10)
     }
 }
 

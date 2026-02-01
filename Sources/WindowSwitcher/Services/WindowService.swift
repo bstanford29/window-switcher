@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import ApplicationServices
 
 /// Service for enumerating and filtering windows
 final class WindowService {
@@ -10,8 +11,15 @@ final class WindowService {
     /// Minimum window size to be considered valid
     private let minimumSize: CGFloat = 50
 
+    /// Cache of AXUIElement apps for window title lookup
+    private var axAppCache: [pid_t: AXUIElement] = [:]
+
     /// Get all switchable windows, sorted by most recently focused
     func getWindows() -> [WindowInfo] {
+        // Reset caches for fresh enumeration
+        titlesCache = [:]
+        titleIndexByApp = [:]
+
         guard let windowList = CGWindowListCopyWindowInfo(
             [.optionOnScreenOnly, .excludeDesktopElements],
             kCGNullWindowID
@@ -38,6 +46,50 @@ final class WindowService {
         }
 
         return windows
+    }
+
+    /// Cache of window titles per app (pid -> [title1, title2, ...])
+    private var titlesCache: [pid_t: [String]] = [:]
+    /// Track which title index we've used per app
+    private var titleIndexByApp: [pid_t: Int] = [:]
+
+    /// Get all window titles for an app via Accessibility API
+    private func getWindowTitlesForApp(pid: pid_t) -> [String] {
+        // Return cached if available
+        if let cached = titlesCache[pid] {
+            return cached
+        }
+
+        let axApp = AXUIElementCreateApplication(pid)
+        var windowsRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef)
+
+        guard result == .success, let windows = windowsRef as? [AXUIElement] else {
+            titlesCache[pid] = []
+            return []
+        }
+
+        var titles: [String] = []
+        for window in windows {
+            var titleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
+            if let title = titleRef as? String, !title.isEmpty {
+                titles.append(title)
+            }
+        }
+
+        titlesCache[pid] = titles
+        return titles
+    }
+
+    /// Get the next available title for an app
+    private func getNextTitleForApp(pid: pid_t) -> String? {
+        let titles = getWindowTitlesForApp(pid: pid)
+        let index = titleIndexByApp[pid] ?? 0
+        titleIndexByApp[pid] = index + 1
+
+        guard index < titles.count else { return nil }
+        return titles[index]
     }
 
     /// Parse a window dictionary into a WindowInfo, returning nil if it should be filtered out
@@ -83,8 +135,15 @@ final class WindowService {
         let excludedApps = ["Dock", "Window Server", "SystemUIServer", "Control Center", "Notification Center"]
         guard !excludedApps.contains(ownerName) else { return nil }
 
-        // Get window title (may be nil or empty)
-        let windowTitle = dict[kCGWindowName as String] as? String
+        // Get window title via Accessibility API (CGWindowList often returns nil)
+        var windowTitle = getNextTitleForApp(pid: ownerPID)
+
+        // Fall back to CGWindowList if AX didn't return anything
+        if windowTitle == nil || windowTitle?.isEmpty == true {
+            windowTitle = dict[kCGWindowName as String] as? String
+        }
+
+        NSLog("[WindowService] \(ownerName): '\(windowTitle ?? "(nil)")'")
 
         // Get app icon
         let appIcon: NSImage

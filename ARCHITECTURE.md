@@ -110,6 +110,35 @@ The app runs as a menu bar agent (`LSUIElement=YES` in Info.plist):
 
 Location: `WindowSwitcher.app/`
 
+## Debugging Notes
+
+### Window Titles Not Showing (Fixed)
+**Root cause:** `CGWindowListCopyWindowInfo` with `kCGWindowName` returns `nil` for most windows without Screen Recording permission.
+
+**Solution:** Use Accessibility API (`AXUIElement`) to get window titles:
+```swift
+let axApp = AXUIElementCreateApplication(pid)
+AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute, &windowsRef)
+// Then for each window:
+AXUIElementCopyAttributeValue(window, kAXTitleAttribute, &titleRef)
+```
+
+**Affected components:** `WindowService.swift` - added `getWindowTitlesForApp()` and `getNextTitleForApp()` methods with caching.
+
+### Tab Cycling While Holding Option (Fixed)
+**Root cause:** HotKey library fires `keyDownHandler` on every Option+Tab press, not just the first.
+
+**Solution:** Check if switcher is already visible in `handleHotkeyPressed()`:
+```swift
+if isSwitcherVisible {
+    onCycleForward?()  // Cycle to next
+} else {
+    onShowSwitcher?()  // Show switcher
+}
+```
+
+**Affected components:** `HotkeyManager.swift`
+
 ## Known Issues / Limitations
 
 1. **Current Space only** - Only shows windows on current desktop
