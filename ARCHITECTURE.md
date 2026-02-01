@@ -162,6 +162,37 @@ optionQHotKey?.keyDownHandler = { [weak self] in
 3. **Some apps hide windows** - Electron apps may not expose all windows
 4. **Minimized windows excluded** - Same behavior as Windows Alt+Tab (by design)
 
+## Phase 3: Thumbnails (Not Implemented)
+
+**Status:** Skipped - requires Screen Recording permission
+
+### What It Would Add
+- Live window preview thumbnails instead of just app icons
+- `CGWindowListCreateImage()` to capture window contents
+- Grid layout optimized for larger thumbnail cells
+
+### Why Skipped
+- **Permission friction:** Screen Recording permission requires user to quit and restart the app
+- **Privacy concerns:** Users may be hesitant to grant screen recording to a utility app
+- **Current UX is sufficient:** App icons + window titles provide enough context for switching
+
+### Future Implementation Notes
+If implementing thumbnails:
+```swift
+// Capture window thumbnail
+let image = CGWindowListCreateImage(
+    .null,
+    .optionIncludingWindow,
+    windowID,
+    [.boundsIgnoreFraming, .nominalResolution]
+)
+```
+- Would need to detect Screen Recording permission via `CGPreflightScreenCaptureAccess()`
+- Graceful fallback to icons when permission denied
+- Consider caching thumbnails to reduce CPU usage
+
+---
+
 ## Edge Case Handling (Phase 4)
 
 ### Window Close During Switcher Open
