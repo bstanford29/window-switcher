@@ -14,3 +14,5 @@ DerivedData/
 WindowSwitcher.app/
 .build/
 .swiftpm/
+WindowSwitcher.app/
+AppIcon.iconset/
