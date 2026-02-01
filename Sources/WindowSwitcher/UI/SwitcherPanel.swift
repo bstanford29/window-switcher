@@ -11,9 +11,9 @@ final class SwitcherPanel: NSPanel {
             defer: false
         )
 
-        // Configure panel behavior
-        level = .floating
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        // Configure panel behavior - use screenSaver level to appear above everything
+        level = .screenSaver
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         isOpaque = false
         backgroundColor = .clear
         hasShadow = false
@@ -42,10 +42,21 @@ final class SwitcherPanelController: ObservableObject {
 
     /// Show the switcher panel with the current windows
     func show() {
+        NSLog("[Panel] show() called")
+
         // Refresh window list
         windows = WindowService.shared.getWindows()
+        NSLog("[Panel] Found \(windows.count) windows")
 
-        guard !windows.isEmpty else { return }
+        guard !windows.isEmpty else {
+            NSLog("[Panel] No windows found, returning")
+            return
+        }
+
+        // Log window names
+        for (i, w) in windows.prefix(5).enumerated() {
+            NSLog("[Panel] Window \(i): \(w.ownerName) - \(w.windowTitle ?? "untitled")")
+        }
 
         // Reset selection to the second window (most recently used after current)
         // If there's only one window, select it
@@ -54,9 +65,13 @@ final class SwitcherPanelController: ObservableObject {
         // Create panel if needed
         if panel == nil {
             panel = SwitcherPanel()
+            NSLog("[Panel] Created new panel")
         }
 
-        guard let panel = panel else { return }
+        guard let panel = panel else {
+            NSLog("[Panel] ERROR: panel is nil")
+            return
+        }
 
         // Create the SwiftUI view with bindings
         let view = SwitcherView(
@@ -71,25 +86,35 @@ final class SwitcherPanelController: ObservableObject {
         if hostingView == nil {
             hostingView = NSHostingView(rootView: view)
             panel.contentView = hostingView
+            NSLog("[Panel] Created hosting view")
         } else {
             hostingView?.rootView = view
         }
 
         // Size to fit content
         hostingView?.invalidateIntrinsicContentSize()
-        let size = hostingView?.fittingSize ?? CGSize(width: 400, height: 150)
+        var size = hostingView?.fittingSize ?? CGSize(width: 400, height: 200)
+        // Ensure minimum size
+        size.width = max(size.width, 300)
+        size.height = max(size.height, 150)
+        NSLog("[Panel] Calculated size: \(size)")
 
         // Center on the main screen
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
             let x = screenFrame.midX - size.width / 2
             let y = screenFrame.midY - size.height / 2
-            panel.setFrame(NSRect(x: x, y: y, width: size.width, height: size.height), display: true)
+            let frame = NSRect(x: x, y: y, width: size.width, height: size.height)
+            panel.setFrame(frame, display: true)
+            NSLog("[Panel] Set frame: \(frame)")
+        } else {
+            NSLog("[Panel] ERROR: No main screen")
         }
 
         // Show the panel
         panel.orderFrontRegardless()
         panel.makeKey()
+        NSLog("[Panel] Panel shown, isVisible: \(panel.isVisible)")
 
         // Notify hotkey manager
         HotkeyManager.shared.switcherDidShow()

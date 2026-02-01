@@ -4,13 +4,6 @@ import SwiftUI
 struct WindowSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
-    @StateObject private var panelController = SwitcherPanelController()
-
-    init() {
-        // Set up hotkey callbacks
-        setupHotkeyHandlers()
-    }
-
     var body: some Scene {
         // Menu bar extra (status bar icon)
         MenuBarExtra("WindowSwitcher", systemImage: "square.stack.3d.up") {
@@ -28,29 +21,6 @@ struct WindowSwitcherApp: App {
                 .keyboardShortcut("q", modifiers: .command)
             }
         }
-    }
-
-    private func setupHotkeyHandlers() {
-        let hotkeyManager = HotkeyManager.shared
-
-        hotkeyManager.onShowSwitcher = { [weak panelController] in
-            panelController?.show()
-        }
-
-        hotkeyManager.onHideSwitcher = { [weak panelController] in
-            panelController?.hideAndActivate()
-        }
-
-        hotkeyManager.onCycleForward = { [weak panelController] in
-            panelController?.cycleForward()
-        }
-
-        hotkeyManager.onCycleBackward = { [weak panelController] in
-            panelController?.cycleBackward()
-        }
-
-        // Start listening for hotkeys
-        hotkeyManager.start()
     }
 
     private func showAbout() {

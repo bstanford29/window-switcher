@@ -21,21 +21,41 @@ final class HotkeyManager: ObservableObject {
     private var hotKey: HotKey?
     private var flagsMonitor: Any?
     private var keyMonitor: Any?
+    private var globalKeyMonitor: Any?
     private var isSwitcherVisible = false
 
     private init() {}
 
     /// Start listening for the Option+Tab hotkey
     func start() {
+        NSLog("[HotkeyManager] Starting hotkey registration...")
+
         // Register Option+Tab hotkey
         hotKey = HotKey(key: .tab, modifiers: [.option])
+
+        NSLog("[HotkeyManager] HotKey object created: \(String(describing: hotKey))")
+        NSLog("[HotkeyManager] KeyCombo: \(String(describing: hotKey?.keyCombo))")
+
         hotKey?.keyDownHandler = { [weak self] in
+            NSLog("[HotkeyManager] >>> Option+Tab PRESSED! <<<")
             self?.handleHotkeyPressed()
         }
+
+        hotKey?.keyUpHandler = {
+            NSLog("[HotkeyManager] Option+Tab released")
+        }
+
+        NSLog("[HotkeyManager] Hotkey registered: Option+Tab")
 
         // Monitor for Option key release
         flagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             self?.handleFlagsChanged(event)
+        }
+
+        if flagsMonitor != nil {
+            NSLog("[HotkeyManager] Global flags monitor installed")
+        } else {
+            NSLog("[HotkeyManager] WARNING: Failed to install global flags monitor")
         }
 
         // Also monitor local events (when our window is focused)
@@ -47,6 +67,21 @@ final class HotkeyManager: ObservableObject {
             }
             return event
         }
+
+        NSLog("[HotkeyManager] Event monitors installed")
+
+        // DEBUG: Monitor ALL global key events to see if Option+Tab reaches us
+        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { event in
+            let keyCode = event.keyCode
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            NSLog("[HotkeyManager] Global keyDown: keyCode=\(keyCode), modifiers=\(modifiers)")
+
+            // Tab key = 48, Option = .option
+            if keyCode == 48 && modifiers.contains(.option) {
+                NSLog("[HotkeyManager] !!! Option+Tab detected via global monitor !!!")
+            }
+        }
+        NSLog("[HotkeyManager] Global key monitor installed for debugging")
     }
 
     /// Stop listening for hotkeys

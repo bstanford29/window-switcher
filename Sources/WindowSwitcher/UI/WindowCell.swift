@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// Individual window cell in the switcher
+/// Individual window cell in the switcher (Grid layout - Option B)
 struct WindowCell: View {
     let window: WindowInfo
     let isSelected: Bool
 
-    private let iconSize: CGFloat = 64
-    private let cellWidth: CGFloat = 120
-    private let cellHeight: CGFloat = 100
+    private let iconSize: CGFloat = 48
+    private let cellWidth: CGFloat = 160
+    private let cellHeight: CGFloat = 80
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             // App icon
             Image(nsImage: window.appIcon)
                 .resizable()
@@ -18,24 +18,29 @@ struct WindowCell: View {
                 .frame(width: iconSize, height: iconSize)
                 .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
 
-            // Window title
-            Text(window.displayTitle)
-                .font(.system(size: 11, weight: .medium))
+            // App name
+            Text(window.ownerName)
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .frame(width: cellWidth - 16)
+                .lineLimit(1)
+
+            // Window title (subtitle)
+            Text(window.windowTitle ?? "")
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.6))
+                .lineLimit(1)
+                .frame(width: cellWidth - 24)
         }
         .frame(width: cellWidth, height: cellHeight)
-        .padding(.vertical, 12)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 10)
         .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(isSelected ? Color.white.opacity(0.2) : Color.clear)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(isSelected ? Color.blue.opacity(0.3) : Color.clear)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(isSelected ? Color.white.opacity(0.8) : Color.clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
         )
         .contentShape(Rectangle())
     }

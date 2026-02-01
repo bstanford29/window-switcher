@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Window Switcher UI Mockups</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 60px;
+            font-size: 16px;
+        }
+
+        .mockup-section {
+            margin-bottom: 80px;
+        }
+
+        .mockup-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mockup-title .badge {
+            background: #4ade80;
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mockup-description {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .pros-cons {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .pros, .cons {
+            flex: 1;
+        }
+
+        .pros h4 {
+            color: #4ade80;
+            margin-bottom: 8px;
+        }
+
+        .cons h4 {
+            color: #f87171;
+            margin-bottom: 8px;
+        }
+
+        .pros ul, .cons ul {
+            list-style: none;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .pros li::before {
+            content: "✓ ";
+            color: #4ade80;
+        }
+
+        .cons li::before {
+            content: "✗ ";
+            color: #f87171;
+        }
+
+        /* Option A: Horizontal Row */
+        .horizontal-switcher {
+            display: flex;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .horizontal-container {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px;
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .window-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-width: 90px;
+        }
+
+        .window-cell:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .window-cell.selected {
+            background: rgba(59, 130, 246, 0.3);
+            border: 2px solid #3b82f6;
+        }
+
+        .window-cell .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .window-cell .icon.safari { background: linear-gradient(135deg, #00d4ff 0%, #0066ff 100%); }
+        .window-cell .icon.finder { background: linear-gradient(135deg, #5ac8fa 0%, #007aff 100%); }
+        .window-cell .icon.terminal { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); }
+        .window-cell .icon.notes { background: linear-gradient(135deg, #ffd60a 0%, #ffb800 100%); }
+        .window-cell .icon.music { background: linear-gradient(135deg, #fa2d48 0%, #ff375f 100%); }
+        .window-cell .icon.slack { background: linear-gradient(135deg, #611f69 0%, #4a154b 100%); }
+        .window-cell .icon.mail { background: linear-gradient(135deg, #007aff 0%, #5856d6 100%); }
+
+        .window-cell .title {
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        /* Option B: Grid Layout */
+        .grid-switcher {
+            display: flex;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 20px;
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .grid-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-width: 140px;
+        }
+
+        .grid-cell:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .grid-cell.selected {
+            background: rgba(59, 130, 246, 0.3);
+            border: 2px solid #3b82f6;
+        }
+
+        .grid-cell .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .grid-cell .app-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 2px;
+        }
+
+        .grid-cell .window-title {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Option C: Vertical List */
+        .vertical-switcher {
+            display: flex;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .vertical-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 12px;
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            min-width: 380px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .list-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .list-item.selected {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .list-item .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .list-item .text {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .list-item .full-title {
+            font-size: 13px;
+            color: rgba(255,255,255,0.95);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .list-item .indicator {
+            color: #3b82f6;
+            font-size: 14px;
+        }
+
+        /* Interactive hint */
+        .hint {
+            text-align: center;
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Window Switcher UI Mockups</h1>
+    <p class="subtitle">Click items to see selection state • Choose your preferred layout</p>
+
+    <!-- Option A: Horizontal Row -->
+    <div class="mockup-section">
+        <div class="mockup-title">
+            Option A: Horizontal Row
+            <span class="badge">Recommended</span>
+        </div>
+        <p class="mockup-description">Classic Windows Alt+Tab style. Compact, good for quick switching.</p>
+
+        <div class="horizontal-switcher">
+            <div class="horizontal-container" id="horizontal">
+                <div class="window-cell selected" onclick="selectHorizontal(this)">
+                    <div class="icon safari">🌐</div>
+                    <div class="title">Safari</div>
+                </div>
+                <div class="window-cell" onclick="selectHorizontal(this)">
+                    <div class="icon finder">📁</div>
+                    <div class="title">Finder</div>
+                </div>
+                <div class="window-cell" onclick="selectHorizontal(this)">
+                    <div class="icon terminal">💻</div>
+                    <div class="title">Terminal</div>
+                </div>
+                <div class="window-cell" onclick="selectHorizontal(this)">
+                    <div class="icon notes">📝</div>
+                    <div class="title">Notes</div>
+                </div>
+                <div class="window-cell" onclick="selectHorizontal(this)">
+                    <div class="icon music">🎵</div>
+                    <div class="title">Music</div>
+                </div>
+            </div>
+        </div>
+        <p class="hint">Press Tab to cycle • Release Option to activate</p>
+
+        <div class="pros-cons">
+            <div class="pros">
+                <h4>Pros</h4>
+                <ul>
+                    <li>Familiar Windows Alt+Tab feel</li>
+                    <li>Fast to scan horizontally</li>
+                    <li>Minimal screen space</li>
+                    <li>Simple Tab to cycle</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <h4>Cons</h4>
+                <ul>
+                    <li>Hard to fit many windows</li>
+                    <li>Titles get truncated</li>
+                    <li>No room for thumbnails</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option B: Grid Layout -->
+    <div class="mockup-section">
+        <div class="mockup-title">Option B: Grid Layout</div>
+        <p class="mockup-description">2D grid that scales better with many windows. Room for thumbnails later.</p>
+
+        <div class="grid-switcher">
+            <div class="grid-container" id="grid">
+                <div class="grid-cell selected" onclick="selectGrid(this)">
+                    <div class="icon safari">🌐</div>
+                    <div class="app-name">Safari</div>
+                    <div class="window-title">Claude Code conversation</div>
+                </div>
+                <div class="grid-cell" onclick="selectGrid(this)">
+                    <div class="icon finder">📁</div>
+                    <div class="app-name">Finder</div>
+                    <div class="window-title">Downloads</div>
+                </div>
+                <div class="grid-cell" onclick="selectGrid(this)">
+                    <div class="icon terminal">💻</div>
+                    <div class="app-name">Terminal</div>
+                    <div class="window-title">~/Projects D</div>
+                </div>
+                <div class="grid-cell" onclick="selectGrid(this)">
+                    <div class="icon notes">📝</div>
+                    <div class="app-name">Notes</div>
+                    <div class="window-title">Meeting notes 2026</div>
+                </div>
+                <div class="grid-cell" onclick="selectGrid(this)">
+                    <div class="icon music">🎵</div>
+                    <div class="app-name">Music</div>
+                    <div class="window-title">Now Playing</div>
+                </div>
+                <div class="grid-cell" onclick="selectGrid(this)">
+                    <div class="icon slack">💬</div>
+                    <div class="app-name">Slack</div>
+                    <div class="window-title">#engineering</div>
+                </div>
+            </div>
+        </div>
+        <p class="hint">Arrow keys to navigate • Enter to activate</p>
+
+        <div class="pros-cons">
+            <div class="pros">
+                <h4>Pros</h4>
+                <ul>
+                    <li>Fits more windows</li>
+                    <li>Room for window titles</li>
+                    <li>Can add thumbnails later</li>
+                    <li>Scales well</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <h4>Cons</h4>
+                <ul>
+                    <li>Takes more screen space</li>
+                    <li>Requires arrow key navigation</li>
+                    <li>More complex interaction</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option C: Vertical List -->
+    <div class="mockup-section">
+        <div class="mockup-title">Option C: Vertical List</div>
+        <p class="mockup-description">List format with full window titles visible. Very readable.</p>
+
+        <div class="vertical-switcher">
+            <div class="vertical-container" id="vertical">
+                <div class="list-item selected" onclick="selectVertical(this)">
+                    <span class="indicator">▶</span>
+                    <div class="icon safari">🌐</div>
+                    <div class="text">
+                        <div class="full-title">Safari - Claude Code conversation</div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="selectVertical(this)">
+                    <span class="indicator" style="opacity: 0">▶</span>
+                    <div class="icon finder">📁</div>
+                    <div class="text">
+                        <div class="full-title">Finder - Downloads</div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="selectVertical(this)">
+                    <span class="indicator" style="opacity: 0">▶</span>
+                    <div class="icon terminal">💻</div>
+                    <div class="text">
+                        <div class="full-title">Terminal - ~/Projects D</div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="selectVertical(this)">
+                    <span class="indicator" style="opacity: 0">▶</span>
+                    <div class="icon notes">📝</div>
+                    <div class="text">
+                        <div class="full-title">Notes - Meeting notes 2026-01-31</div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="selectVertical(this)">
+                    <span class="indicator" style="opacity: 0">▶</span>
+                    <div class="icon music">🎵</div>
+                    <div class="text">
+                        <div class="full-title">Music - Now Playing</div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="selectVertical(this)">
+                    <span class="indicator" style="opacity: 0">▶</span>
+                    <div class="icon slack">💬</div>
+                    <div class="text">
+                        <div class="full-title">Slack - #engineering</div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="selectVertical(this)">
+                    <span class="indicator" style="opacity: 0">▶</span>
+                    <div class="icon mail">📧</div>
+                    <div class="text">
+                        <div class="full-title">Mail - Inbox (3 unread)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="hint">Up/Down to navigate • Enter to activate</p>
+
+        <div class="pros-cons">
+            <div class="pros">
+                <h4>Pros</h4>
+                <ul>
+                    <li>Full titles visible</li>
+                    <li>Very readable</li>
+                    <li>Compact width</li>
+                    <li>Familiar list UX</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <h4>Cons</h4>
+                <ul>
+                    <li>Takes vertical space</li>
+                    <li>Less visual appeal</li>
+                    <li>No room for thumbnails</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectHorizontal(el) {
+            document.querySelectorAll('#horizontal .window-cell').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function selectGrid(el) {
+            document.querySelectorAll('#grid .grid-cell').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function selectVertical(el) {
+            document.querySelectorAll('#vertical .list-item').forEach(item => {
+                item.classList.remove('selected');
+                item.querySelector('.indicator').style.opacity = '0';
+            });
+            el.classList.add('selected');
+            el.querySelector('.indicator').style.opacity = '1';
+        }
+    </script>
+</body>
+</html>

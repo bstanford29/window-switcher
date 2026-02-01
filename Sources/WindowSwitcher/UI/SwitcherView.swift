@@ -1,12 +1,21 @@
 import SwiftUI
 
-/// Main SwiftUI view for the window switcher
+/// Main SwiftUI view for the window switcher (Grid layout - Option B)
 struct SwitcherView: View {
     let windows: [WindowInfo]
     @Binding var selectedIndex: Int
 
+    /// Calculate number of columns based on window count (max 4 columns)
+    private var columns: Int {
+        min(max(1, windows.count), 4)
+    }
+
+    private var gridColumns: [GridItem] {
+        Array(repeating: GridItem(.fixed(180), spacing: 8), count: columns)
+    }
+
     var body: some View {
-        HStack(spacing: 4) {
+        LazyVGrid(columns: gridColumns, spacing: 8) {
             ForEach(Array(windows.enumerated()), id: \.element.id) { index, window in
                 WindowCell(
                     window: window,
@@ -17,17 +26,23 @@ struct SwitcherView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(20)
+        .frame(minWidth: 200, minHeight: 120)
         .background(
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+            ZStack {
+                // Solid dark background for visibility
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.black.opacity(0.85))
+                // Blur effect on top
+                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                .stroke(Color.white.opacity(0.3), lineWidth: 2)
         )
-        .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+        .shadow(color: .black.opacity(0.6), radius: 30, x: 0, y: 15)
     }
 }
 

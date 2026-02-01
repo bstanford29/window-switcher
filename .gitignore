@@ -11,3 +11,6 @@ DerivedData/
 # IDE
 .idea/
 *.swp
+WindowSwitcher.app/
+.build/
+.swiftpm/
