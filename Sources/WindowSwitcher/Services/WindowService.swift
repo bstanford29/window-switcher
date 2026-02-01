@@ -16,9 +16,8 @@ final class WindowService {
 
     /// Get all switchable windows, sorted by most recently focused
     func getWindows() -> [WindowInfo] {
-        // Reset caches for fresh enumeration
-        titlesCache = [:]
-        titleIndexByApp = [:]
+        // Reset cache for fresh enumeration
+        axWindowsCache = [:]
 
         // Note: .optionOnScreenOnly excludes minimized windows (same as Windows Alt+Tab)
         // To include minimized windows, would need .optionAll but that includes off-screen
@@ -53,15 +52,13 @@ final class WindowService {
         return windows
     }
 
-    /// Cache of window titles per app (pid -> [title1, title2, ...])
-    private var titlesCache: [pid_t: [String]] = [:]
-    /// Track which title index we've used per app
-    private var titleIndexByApp: [pid_t: Int] = [:]
+    /// Cache of AX windows per app (pid -> [(title, position)])
+    private var axWindowsCache: [pid_t: [(title: String, position: CGPoint)]] = [:]
 
-    /// Get all window titles for an app via Accessibility API
-    private func getWindowTitlesForApp(pid: pid_t) -> [String] {
+    /// Get all window titles and positions for an app via Accessibility API
+    private func getAXWindowsForApp(pid: pid_t) -> [(title: String, position: CGPoint)] {
         // Return cached if available
-        if let cached = titlesCache[pid] {
+        if let cached = axWindowsCache[pid] {
             return cached
         }
 
@@ -71,31 +68,51 @@ final class WindowService {
 
         guard result == .success, let windows = windowsRef as? [AXUIElement] else {
             // AX API can fail for various reasons (permission, app not responding, etc.)
-            titlesCache[pid] = []
+            axWindowsCache[pid] = []
             return []
         }
 
-        var titles: [String] = []
+        var windowData: [(title: String, position: CGPoint)] = []
         for window in windows {
+            // Get title
             var titleRef: CFTypeRef?
             let titleResult = AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
-            if titleResult == .success, let title = titleRef as? String, !title.isEmpty {
-                titles.append(title)
+            let title = (titleResult == .success) ? (titleRef as? String ?? "") : ""
+
+            // Get position for matching
+            var positionRef: CFTypeRef?
+            var position = CGPoint.zero
+            if AXUIElementCopyAttributeValue(window, kAXPositionAttribute as CFString, &positionRef) == .success,
+               let posValue = positionRef,
+               CFGetTypeID(posValue) == AXValueGetTypeID() {
+                let axValue = posValue as! AXValue  // Safe: verified by CFGetTypeID
+                AXValueGetValue(axValue, .cgPoint, &position)
+            }
+
+            if !title.isEmpty {
+                windowData.append((title: title, position: position))
             }
         }
 
-        titlesCache[pid] = titles
-        return titles
+        axWindowsCache[pid] = windowData
+        return windowData
     }
 
-    /// Get the next available title for an app
-    private func getNextTitleForApp(pid: pid_t) -> String? {
-        let titles = getWindowTitlesForApp(pid: pid)
-        let index = titleIndexByApp[pid] ?? 0
-        titleIndexByApp[pid] = index + 1
+    /// Get window title by matching position (more reliable than index matching)
+    private func getTitleForWindow(pid: pid_t, bounds: CGRect) -> String? {
+        let axWindows = getAXWindowsForApp(pid: pid)
 
-        guard index < titles.count else { return nil }
-        return titles[index]
+        // Find window with matching position (within tolerance)
+        let tolerance: CGFloat = 10
+        for axWindow in axWindows {
+            if abs(axWindow.position.x - bounds.origin.x) < tolerance &&
+               abs(axWindow.position.y - bounds.origin.y) < tolerance {
+                return axWindow.title
+            }
+        }
+
+        // Fall back to first available title if position matching fails
+        return axWindows.first?.title
     }
 
     /// Parse a window dictionary into a WindowInfo, returning nil if it should be filtered out
@@ -141,8 +158,8 @@ final class WindowService {
         let excludedApps = ["Dock", "Window Server", "SystemUIServer", "Control Center", "Notification Center"]
         guard !excludedApps.contains(ownerName) else { return nil }
 
-        // Get window title via Accessibility API (CGWindowList often returns nil)
-        var windowTitle = getNextTitleForApp(pid: ownerPID)
+        // Get window title via Accessibility API (matches by position for reliability)
+        var windowTitle = getTitleForWindow(pid: ownerPID, bounds: bounds)
 
         // Fall back to CGWindowList if AX didn't return anything
         if windowTitle == nil || windowTitle?.isEmpty == true {
