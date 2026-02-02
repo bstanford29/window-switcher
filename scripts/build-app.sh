@@ -35,5 +35,9 @@ cp assets/icon-1024.png AppIcon.iconset/icon_512x512@2x.png
 iconutil -c icns AppIcon.iconset -o WindowSwitcher.app/Contents/Resources/AppIcon.icns
 rm -rf AppIcon.iconset
 
+# Sign the app with a stable identifier (required for Accessibility permission to persist)
+echo "Signing app bundle..."
+codesign --force --sign - --identifier "com.brandonstanford.windowswitcher" WindowSwitcher.app
+
 echo "Done! WindowSwitcher.app created"
 echo "To install: cp -r WindowSwitcher.app /Applications/"

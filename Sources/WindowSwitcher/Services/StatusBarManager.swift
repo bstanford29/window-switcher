@@ -14,9 +14,7 @@ final class StatusBarManager {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         guard let button = statusItem?.button else {
-            #if DEBUG
-            NSLog("[StatusBarManager] Failed to create status item button")
-            #endif
+            Logger.error("Failed to create status item button", category: .statusBar)
             return
         }
 
@@ -57,9 +55,7 @@ final class StatusBarManager {
 
         statusItem?.menu = menu
 
-        #if DEBUG
-        NSLog("[StatusBarManager] Status bar icon created")
-        #endif
+        Logger.debug("Status bar icon created", category: .statusBar)
     }
 
     /// Create a fallback icon if SF Symbols aren't available

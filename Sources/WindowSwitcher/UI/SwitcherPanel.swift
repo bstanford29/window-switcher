@@ -29,9 +29,7 @@ final class SwitcherPanel: NSPanel {
 
     // Handle key events directly
     override func keyDown(with event: NSEvent) {
-        #if DEBUG
-        NSLog("[Panel] keyDown: keyCode=\(event.keyCode)")
-        #endif
+        Logger.debug("keyDown: keyCode=\(event.keyCode)", category: .panel)
         // Let the HotkeyManager handle it via the event monitors
         super.keyDown(with: event)
     }
@@ -51,29 +49,16 @@ final class SwitcherPanelController: ObservableObject {
 
     /// Show the switcher panel with the current windows
     func show() {
-        #if DEBUG
-        NSLog("[Panel] show() called")
-        #endif
+        Logger.debug("show() called", category: .panel)
 
         // Refresh window list
         windows = WindowService.shared.getWindows()
-        #if DEBUG
-        NSLog("[Panel] Found \(windows.count) windows")
-        #endif
+        Logger.debug("Found \(windows.count) windows", category: .panel)
 
         guard !windows.isEmpty else {
-            #if DEBUG
-            NSLog("[Panel] No windows found, returning")
-            #endif
+            Logger.debug("No windows found, returning", category: .panel)
             return
         }
-
-        #if DEBUG
-        // Log window names (only in debug, window titles may contain sensitive info)
-        for (i, w) in windows.prefix(8).enumerated() {
-            NSLog("[Panel] Window \(i): \(w.ownerName)")
-        }
-        #endif
 
         // Reset selection to the second window (most recently used after current)
         // If there's only one window, select it
@@ -82,15 +67,11 @@ final class SwitcherPanelController: ObservableObject {
         // Create panel if needed
         if panel == nil {
             panel = SwitcherPanel()
-            #if DEBUG
-            NSLog("[Panel] Created new panel")
-            #endif
+            Logger.debug("Created new panel", category: .panel)
         }
 
         guard let panel = panel else {
-            #if DEBUG
-            NSLog("[Panel] ERROR: panel is nil")
-            #endif
+            Logger.error("Panel is nil", category: .panel)
             return
         }
 
@@ -107,9 +88,7 @@ final class SwitcherPanelController: ObservableObject {
         if hostingView == nil {
             hostingView = NSHostingView(rootView: view)
             panel.contentView = hostingView
-            #if DEBUG
-            NSLog("[Panel] Created hosting view")
-            #endif
+            Logger.debug("Created hosting view", category: .panel)
         } else {
             hostingView?.rootView = view
         }
@@ -120,9 +99,7 @@ final class SwitcherPanelController: ObservableObject {
         // Ensure minimum size
         size.width = max(size.width, 300)
         size.height = max(size.height, 150)
-        #if DEBUG
-        NSLog("[Panel] Calculated size: \(size)")
-        #endif
+        Logger.debug("Calculated size: \(size)", category: .panel)
 
         // Center on the main screen
         if let screen = NSScreen.main {
@@ -131,13 +108,9 @@ final class SwitcherPanelController: ObservableObject {
             let y = screenFrame.midY - size.height / 2
             let frame = NSRect(x: x, y: y, width: size.width, height: size.height)
             panel.setFrame(frame, display: true)
-            #if DEBUG
-            NSLog("[Panel] Set frame: \(frame)")
-            #endif
+            Logger.debug("Set frame: \(frame)", category: .panel)
         } else {
-            #if DEBUG
-            NSLog("[Panel] ERROR: No main screen")
-            #endif
+            Logger.error("No main screen", category: .panel)
         }
 
         // Show the panel
@@ -150,9 +123,7 @@ final class SwitcherPanelController: ObservableObject {
         // Make panel first responder
         panel.makeFirstResponder(panel.contentView)
 
-        #if DEBUG
-        NSLog("[Panel] Panel shown, isVisible: \(panel.isVisible), isKeyWindow: \(panel.isKeyWindow)")
-        #endif
+        Logger.debug("Panel shown, isVisible: \(panel.isVisible), isKeyWindow: \(panel.isKeyWindow)", category: .panel)
 
         // Notify hotkey manager
         HotkeyManager.shared.switcherDidShow()
@@ -176,13 +147,9 @@ final class SwitcherPanelController: ObservableObject {
             // Small delay to ensure panel is hidden first
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 let success = WindowActivator.shared.activate(window)
-                #if DEBUG
                 if !success {
-                    NSLog("[Panel] Window no longer exists, skipping activation: \(window.ownerName)")
+                    Logger.debug("Window no longer exists, skipping activation: \(window.ownerName)", category: .panel)
                 }
-                #else
-                _ = success // Silence unused variable warning in release
-                #endif
             }
         }
 
@@ -219,43 +186,31 @@ final class SwitcherPanelController: ObservableObject {
     /// Close the selected app and refresh the window list
     /// Note: Uses terminate() only to allow apps to show "save changes" dialogs
     func closeSelectedApp() {
-        #if DEBUG
-        NSLog("[Panel] closeSelectedApp() called - selectedIndex: \(selectedIndex), windows.count: \(windows.count)")
-        #endif
+        Logger.debug("closeSelectedApp() called - selectedIndex: \(selectedIndex), windows.count: \(windows.count)", category: .panel)
         guard selectedIndex < windows.count else {
-            #if DEBUG
-            NSLog("[Panel] ERROR: selectedIndex out of bounds")
-            #endif
+            Logger.error("selectedIndex out of bounds", category: .panel)
             return
         }
 
         let window = windows[selectedIndex]
         let pid = window.ownerPID
-        #if DEBUG
-        NSLog("[Panel] Attempting to close: \(window.ownerName) (PID: \(pid))")
-        #endif
+        Logger.debug("Attempting to close: \(window.ownerName) (PID: \(pid))", category: .panel)
 
         // Find the running application and terminate it
         guard let app = NSRunningApplication(processIdentifier: pid) else {
-            #if DEBUG
-            NSLog("[Panel] App not found (already closed?), refreshing list")
-            #endif
+            Logger.debug("App not found (already closed?), refreshing list", category: .panel)
             refreshWindowList()
             return
         }
 
         // Check if already terminated
         if app.isTerminated {
-            #if DEBUG
-            NSLog("[Panel] App already terminated, refreshing list")
-            #endif
+            Logger.debug("App already terminated, refreshing list", category: .panel)
             refreshWindowList()
             return
         }
 
-        #if DEBUG
-        NSLog("[Panel] Found app, calling terminate()")
-        #endif
+        Logger.debug("Found app, calling terminate()", category: .panel)
         // Use terminate() only - allows apps to show "save changes" dialogs
         // Do not use forceTerminate() to prevent potential data loss
         _ = app.terminate()

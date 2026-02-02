@@ -3,45 +3,65 @@ import AppKit
 /// Application delegate handling lifecycle and permissions
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let panelController = SwitcherPanelController()
+    private var permissionTimer: Timer?
+    private var hotkeyStarted = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        #if DEBUG
-        NSLog("[WindowSwitcher] App launched")
-        #endif
+        Logger.debug("App launched", category: .app)
 
         // Set up status bar icon
         StatusBarManager.shared.setup()
 
-        // Check and request Accessibility permission
-        let hasPermission = checkAccessibilityPermission()
-        #if DEBUG
-        NSLog("[WindowSwitcher] Accessibility permission: \(hasPermission)")
-        #else
-        _ = hasPermission // Silence unused variable warning in release
-        #endif
-
-        // Set up hotkey handlers
+        // Set up hotkey handlers (but don't start yet)
         setupHotkeyHandlers()
 
-        // Start listening for hotkeys
-        HotkeyManager.shared.start()
-        #if DEBUG
-        NSLog("[WindowSwitcher] Hotkey manager started")
-        #endif
+        // Check and request Accessibility permission
+        let hasPermission = checkAccessibilityPermission()
+        Logger.debug("Accessibility permission: \(hasPermission)", category: .app)
+
+        if hasPermission {
+            // Permission already granted, start hotkeys immediately
+            startHotkeys()
+        } else {
+            // Poll for permission until granted
+            startPermissionPolling()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        permissionTimer?.invalidate()
+        permissionTimer = nil
         HotkeyManager.shared.stop()
         StatusBarManager.shared.teardown()
+    }
+
+    private func startHotkeys() {
+        guard !hotkeyStarted else { return }
+        hotkeyStarted = true
+
+        HotkeyManager.shared.start()
+        Logger.debug("Hotkey manager started", category: .app)
+    }
+
+    private func startPermissionPolling() {
+        Logger.debug("Starting permission polling...", category: .app)
+
+        // Poll every 0.5 seconds until permission is granted
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            if PermissionManager.shared.hasAccessibilityPermission {
+                Logger.debug("Accessibility permission granted!", category: .app)
+                self?.permissionTimer?.invalidate()
+                self?.permissionTimer = nil
+                self?.startHotkeys()
+            }
+        }
     }
 
     private func checkAccessibilityPermission() -> Bool {
         let permissionManager = PermissionManager.shared
 
         if !permissionManager.hasAccessibilityPermission {
-            #if DEBUG
-            NSLog("[WindowSwitcher] Requesting accessibility permission...")
-            #endif
+            Logger.debug("Requesting accessibility permission...", category: .app)
             permissionManager.requestAccessibilityPermission()
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -56,16 +76,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hotkeyManager = HotkeyManager.shared
 
         hotkeyManager.onShowSwitcher = { [weak self] in
-            #if DEBUG
-            NSLog("[WindowSwitcher] onShowSwitcher called")
-            #endif
+            Logger.debug("onShowSwitcher called", category: .app)
             self?.panelController.show()
         }
 
         hotkeyManager.onHideSwitcher = { [weak self] in
-            #if DEBUG
-            NSLog("[WindowSwitcher] onHideSwitcher called")
-            #endif
+            Logger.debug("onHideSwitcher called", category: .app)
             self?.panelController.hideAndActivate()
         }
 
@@ -81,8 +97,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.closeSelectedApp()
         }
 
-        #if DEBUG
-        NSLog("[WindowSwitcher] Hotkey handlers configured")
-        #endif
+        Logger.debug("Hotkey handlers configured", category: .app)
     }
 }

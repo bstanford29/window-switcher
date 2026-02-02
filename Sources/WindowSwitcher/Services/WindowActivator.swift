@@ -13,29 +13,21 @@ final class WindowActivator {
     func activate(_ window: WindowInfo) -> Bool {
         // First, check if the app is still running
         guard let app = NSRunningApplication(processIdentifier: window.ownerPID) else {
-            #if DEBUG
-            NSLog("[WindowActivator] App no longer running: \(window.ownerName) (PID: \(window.ownerPID))")
-            #endif
+            Logger.debug("App no longer running: \(window.ownerName) (PID: \(window.ownerPID))", category: .window)
             return false
         }
 
         // Check if app is terminated
         if app.isTerminated {
-            #if DEBUG
-            NSLog("[WindowActivator] App is terminated: \(window.ownerName)")
-            #endif
+            Logger.debug("App is terminated: \(window.ownerName)", category: .window)
             return false
         }
 
         // Activate the owning application
         let activated = app.activate(options: [.activateIgnoringOtherApps])
-        #if DEBUG
         if !activated {
-            NSLog("[WindowActivator] Failed to activate app: \(window.ownerName)")
+            Logger.debug("Failed to activate app: \(window.ownerName)", category: .window)
         }
-        #else
-        _ = activated // Silence unused variable warning in release
-        #endif
 
         // Then raise the specific window using Accessibility API
         raiseWindow(window)
@@ -44,25 +36,14 @@ final class WindowActivator {
 
     /// Raise a specific window using AXUIElement API
     private func raiseWindow(_ window: WindowInfo) {
-        let appElement = AXUIElementCreateApplication(window.ownerPID)
-
-        // Get the windows of this application
-        var windowsRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef)
-
-        guard result == .success,
-              let windowsArray = windowsRef as? [AXUIElement] else {
-            return
-        }
+        let windowsArray = AXHelper.getWindows(for: window.ownerPID)
+        guard !windowsArray.isEmpty else { return }
 
         // Find the matching window by comparing titles or position
         for axWindow in windowsArray {
             if windowMatches(axWindow, target: window) {
-                // Raise the window
-                AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
-
-                // Also set it as the main window
-                AXUIElementSetAttributeValue(axWindow, kAXMainAttribute as CFString, kCFBooleanTrue)
+                AXHelper.raiseWindow(axWindow)
+                AXHelper.setMainWindow(axWindow)
                 break
             }
         }
@@ -71,45 +52,22 @@ final class WindowActivator {
     /// Check if an AXUIElement window matches our WindowInfo
     private func windowMatches(_ axWindow: AXUIElement, target: WindowInfo) -> Bool {
         // Try to match by title first
-        var titleRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
-           let title = titleRef as? String,
+        if let title = AXHelper.getTitle(from: axWindow),
            let targetTitle = target.windowTitle,
            title == targetTitle {
             return true
         }
 
         // Fall back to matching by position
-        var positionRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &positionRef) == .success,
-           let positionValue = positionRef,
-           CFGetTypeID(positionValue) == AXValueGetTypeID() {
-            var position = CGPoint.zero
-            let axValue = positionValue as! AXValue  // Safe: verified by CFGetTypeID check above
-            if AXValueGetValue(axValue, .cgPoint, &position) {
-                // Allow some tolerance in position matching
-                let tolerance: CGFloat = 5
-                if abs(position.x - target.bounds.origin.x) < tolerance &&
-                   abs(position.y - target.bounds.origin.y) < tolerance {
-                    return true
-                }
-            }
+        if let position = AXHelper.getPosition(from: axWindow),
+           GeometryHelper.positionsMatch(position, target.bounds.origin) {
+            return true
         }
 
         // If we can't match precisely, try to match by size as additional heuristic
-        var sizeRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success,
-           let sizeValue = sizeRef,
-           CFGetTypeID(sizeValue) == AXValueGetTypeID() {
-            var size = CGSize.zero
-            let axValue = sizeValue as! AXValue  // Safe: verified by CFGetTypeID check above
-            if AXValueGetValue(axValue, .cgSize, &size) {
-                let tolerance: CGFloat = 5
-                if abs(size.width - target.bounds.width) < tolerance &&
-                   abs(size.height - target.bounds.height) < tolerance {
-                    return true
-                }
-            }
+        if let size = AXHelper.getSize(from: axWindow),
+           GeometryHelper.sizesMatch(size, target.bounds.size) {
+            return true
         }
 
         return false

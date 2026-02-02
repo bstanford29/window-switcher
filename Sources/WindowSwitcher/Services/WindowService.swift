@@ -22,9 +22,7 @@ final class WindowService {
             [.optionOnScreenOnly, .excludeDesktopElements],
             kCGNullWindowID
         ) as? [[String: Any]] else {
-            #if DEBUG
-            NSLog("[WindowService] Failed to get window list from CGWindowListCopyWindowInfo")
-            #endif
+            Logger.error("Failed to get window list from CGWindowListCopyWindowInfo", category: .window)
             return []
         }
 
@@ -59,32 +57,16 @@ final class WindowService {
             return cached
         }
 
-        let axApp = AXUIElementCreateApplication(pid)
-        var windowsRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &windowsRef)
-
-        guard result == .success, let windows = windowsRef as? [AXUIElement] else {
-            // AX API can fail for various reasons (permission, app not responding, etc.)
+        let windows = AXHelper.getWindows(for: pid)
+        guard !windows.isEmpty else {
             axWindowsCache[pid] = []
             return []
         }
 
         var windowData: [(title: String, position: CGPoint)] = []
         for window in windows {
-            // Get title
-            var titleRef: CFTypeRef?
-            let titleResult = AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
-            let title = (titleResult == .success) ? (titleRef as? String ?? "") : ""
-
-            // Get position for matching
-            var positionRef: CFTypeRef?
-            var position = CGPoint.zero
-            if AXUIElementCopyAttributeValue(window, kAXPositionAttribute as CFString, &positionRef) == .success,
-               let posValue = positionRef,
-               CFGetTypeID(posValue) == AXValueGetTypeID() {
-                let axValue = posValue as! AXValue  // Safe: verified by CFGetTypeID
-                AXValueGetValue(axValue, .cgPoint, &position)
-            }
+            let title = AXHelper.getTitle(from: window) ?? ""
+            let position = AXHelper.getPosition(from: window) ?? .zero
 
             if !title.isEmpty {
                 windowData.append((title: title, position: position))
@@ -100,10 +82,8 @@ final class WindowService {
         let axWindows = getAXWindowsForApp(pid: pid)
 
         // Find window with matching position (within tolerance)
-        let tolerance: CGFloat = 10
         for axWindow in axWindows {
-            if abs(axWindow.position.x - bounds.origin.x) < tolerance &&
-               abs(axWindow.position.y - bounds.origin.y) < tolerance {
+            if GeometryHelper.positionsMatch(axWindow.position, bounds.origin) {
                 return axWindow.title
             }
         }

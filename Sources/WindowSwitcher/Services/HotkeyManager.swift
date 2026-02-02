@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Carbon.HIToolbox
 import HotKey
 
@@ -32,60 +33,44 @@ final class HotkeyManager: ObservableObject {
 
     /// Start listening for the Option+Tab hotkey
     func start() {
-        #if DEBUG
-        NSLog("[HotkeyManager] Starting hotkey registration...")
-        #endif
+        Logger.debug("Starting hotkey registration...", category: .hotkey)
+        Logger.debug("Accessibility trusted: \(AXIsProcessTrusted())", category: .hotkey)
 
         // Register Option+Tab hotkey
         optionTabHotKey = HotKey(key: .tab, modifiers: [.option])
 
-        #if DEBUG
-        NSLog("[HotkeyManager] HotKey object created: \(String(describing: optionTabHotKey))")
-        NSLog("[HotkeyManager] KeyCombo: \(String(describing: optionTabHotKey?.keyCombo))")
-        #endif
+        Logger.debug("HotKey object created, keyCombo: \(String(describing: optionTabHotKey?.keyCombo))", category: .hotkey)
 
         optionTabHotKey?.keyDownHandler = { [weak self] in
-            #if DEBUG
-            NSLog("[HotkeyManager] >>> Option+Tab PRESSED! <<<")
-            #endif
+            Logger.debug(">>> Option+Tab PRESSED! <<<", category: .hotkey)
             self?.handleHotkeyPressed()
         }
 
         optionTabHotKey?.keyUpHandler = {
-            #if DEBUG
-            NSLog("[HotkeyManager] Option+Tab released")
-            #endif
+            Logger.debug("Option+Tab released", category: .hotkey)
         }
 
-        #if DEBUG
-        NSLog("[HotkeyManager] Hotkey registered: Option+Tab")
-        #endif
+        Logger.debug("Hotkey registered: Option+Tab", category: .hotkey)
 
         // Register Option+Q hotkey for closing apps
         optionQHotKey = HotKey(key: .q, modifiers: [.option])
         optionQHotKey?.keyDownHandler = { [weak self] in
             guard let self = self, self.isSwitcherVisible else { return }
-            #if DEBUG
-            NSLog("[HotkeyManager] >>> Option+Q PRESSED! <<<")
-            #endif
+            Logger.debug(">>> Option+Q PRESSED! <<<", category: .hotkey)
             self.onCloseApp?()
         }
-        #if DEBUG
-        NSLog("[HotkeyManager] Hotkey registered: Option+Q")
-        #endif
+        Logger.debug("Hotkey registered: Option+Q", category: .hotkey)
 
         // Monitor for Option key release
         flagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             self?.handleFlagsChanged(event)
         }
 
-        #if DEBUG
         if flagsMonitor != nil {
-            NSLog("[HotkeyManager] Global flags monitor installed")
+            Logger.debug("Global flags monitor installed", category: .hotkey)
         } else {
-            NSLog("[HotkeyManager] WARNING: Failed to install global flags monitor")
+            Logger.error("Failed to install global flags monitor", category: .hotkey)
         }
-        #endif
 
         // Also monitor local events (when our window is focused)
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown]) { [weak self] event in
@@ -97,9 +82,7 @@ final class HotkeyManager: ObservableObject {
             return event
         }
 
-        #if DEBUG
-        NSLog("[HotkeyManager] Event monitors installed")
-        #endif
+        Logger.debug("Event monitors installed", category: .hotkey)
 
         // Global key monitor to detect Tab presses while switcher is visible
         globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
@@ -124,9 +107,7 @@ final class HotkeyManager: ObservableObject {
                 self.onCloseApp?()
             }
         }
-        #if DEBUG
-        NSLog("[HotkeyManager] Global key monitor installed")
-        #endif
+        Logger.debug("Global key monitor installed", category: .hotkey)
     }
 
     /// Stop listening for hotkeys
